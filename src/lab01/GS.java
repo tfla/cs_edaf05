@@ -77,9 +77,8 @@ public class GS {
 	}
 
 	public void printCouples() {
-		for (int i = 0; i < N; i++) {
+		for (int i = 0; i < N; i++)
 			System.out.println(men[i] + " -- " + menPartner[i]);
-		}
 	}
 
 	public static void main(String[] args) {
@@ -98,9 +97,9 @@ public class GS {
 		int n = 0;
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine();
-			if (s.startsWith("#")) {
+			if (s.startsWith("#"))
 				System.out.println("kommentar: " + s);
-			} else if (s.startsWith("n")) {
+			else if (s.startsWith("n")) {
 				n = Integer.parseInt(s.split("=")[1]);
 				m = new String[n];
 				w = new String[n];
@@ -113,23 +112,20 @@ public class GS {
 				wp = new String[n][n];
 				mp = new String[n][n];
 				int number = Integer.parseInt(s.split(":")[0]);
-
+				String[] st = s.split(": ")[1].split(" ");
+				System.out.println("number: " + number);
 				if (number % 2 == 0) {
-					String[] st = s.split(": ")[1].split(" ");
 					for (int j = 0; j < st.length; j++) {
-						System.out.println("wp[" + number + "][" + j + "] = "
-								+ st[j]);
-						wp[number][j] = st[j];
+						System.out.println("wp[" + ((number / 2) - 1) + "]["
+								+ j + "] = " + st[j]);
+						wp[number / 2 - 1][j] = st[j];
 					}
 				} else {
-					// String number = scan.nextLine().split(": ")[0];
-					String[] st = scan.nextLine().split(":")[1].split(" ");
 					for (int j = 0; j < st.length; j++) {
-						System.out.println("mp[" + number + "][" + j + "] = "
-								+ st[j]);
-						mp[number][j] = st[j];
+						System.out.println("mp[" + number / 2 + "][" + j
+								+ "] = " + st[j]);
+						mp[number / 2][j] = st[j];
 					}
-					// }
 				}
 			} else if (s.matches("\\d+\\s+\\D+")) {
 				int i = Integer.parseInt(s.split(" ")[0]);
