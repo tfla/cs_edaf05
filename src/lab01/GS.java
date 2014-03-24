@@ -4,16 +4,34 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
+/**
+ * 
+ * @author Timmy Larsson, Housam Abbas Implementation of the Gales-Shapley
+ *         algorithm, prints result to stdout.
+ */
 public class GS {
 
 	private int N, engagedCount;
-	private String[][] menPref;
 	private String[][] womenPref;
+	private String[][] menPref;
 	private String[] men;
 	private String[] women;
+	private String[] womenPartner;
 	private String[] menPartner;
 	private boolean[] menEngaged;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param m
+	 *            String[] of names for "male"-objects.
+	 * @param w
+	 *            String[] of names for "female"-objects.
+	 * @param mp
+	 *            String[] of preferences for "male"-objects.
+	 * @param wp
+	 *            String[] of preferences for "female"-objects..
+	 */
 	public GS(String[] m, String[] w, String[][] mp, String[][] wp) {
 		N = mp.length;
 		engagedCount = 0;
@@ -22,10 +40,14 @@ public class GS {
 		menPref = mp;
 		womenPref = wp;
 		menEngaged = new boolean[N];
+		womenPartner = new String[N];
 		menPartner = new String[N];
 		calcMatches();
 	}
 
+	/**
+	 * Calculates (and prints) the result.
+	 */
 	private void calcMatches() {
 		while (engagedCount < N) {
 			int free;
@@ -33,17 +55,19 @@ public class GS {
 				if (!menEngaged[free])
 					break;
 			for (int i = 0; i < N && !menEngaged[free]; i++) {
-				int index = menIndexOf(womenPref[free][i]);
-				if (menPartner[index] == null) {
-					menPartner[index] = women[free];
+				int index = womenIndexOf(menPref[free][i]);
+				if (womenPartner[index] == null) {
+					womenPartner[index] = men[free];
+					menPartner[free] = women[index];
 					menEngaged[free] = true;
 					engagedCount++;
 				} else {
-					String currentPartner = menPartner[index];
-					if (morePreference(currentPartner, women[free], index)) {
-						menPartner[index] = women[free];
+					String currentPartner = womenPartner[index];
+					if (morePreference(currentPartner, men[free], index)) {
+						womenPartner[index] = men[free];
+						menPartner[free] = women[index];
 						menEngaged[free] = true;
-						menEngaged[womenIndexOf(currentPartner)] = false;
+						menEngaged[menIndexOf(currentPartner)] = false;
 					}
 				}
 			}
@@ -51,6 +75,17 @@ public class GS {
 		printCouples();
 	}
 
+	/**
+	 * Compares two partners to eachother.
+	 * 
+	 * @param curPartner
+	 *            The current partner.
+	 * @param newPartner
+	 *            The partner with which to compare.
+	 * @param index
+	 *            The index for current partner.
+	 * @return
+	 */
 	private boolean morePreference(String curPartner, String newPartner,
 			int index) {
 		for (int i = 0; i < N; i++) {
@@ -77,8 +112,10 @@ public class GS {
 	}
 
 	public void printCouples() {
-		for (int i = 0; i < N; i++)
+		for (int i = 0; i < N; i++) {
+			// System.out.println(womenPartner[i] + " -- " + women[i]);
 			System.out.println(men[i] + " -- " + menPartner[i]);
+		}
 	}
 
 	public static void main(String[] args) {
@@ -86,8 +123,13 @@ public class GS {
 		String[] w = null;
 		String[][] mp = null;
 		String[][] wp = null;
-		File file = new File(
-				"/home/tfla/.workspace/edaf05/src/lab01/sm-friends.in");
+		File file = null;
+		if (args.length < 1) {
+			file = new File(System.getProperty("user.dir")
+					+ "/src/lab01/sm-random-500.in");
+		} else {
+			file = new File(args[0]);
+		}
 		Scanner scan = null;
 		try {
 			scan = new Scanner(file);
@@ -97,45 +139,57 @@ public class GS {
 		int n = 0;
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine();
-			if (s.startsWith("#"))
-				System.out.println("kommentar: " + s);
-			else if (s.startsWith("n")) {
+			if (s.startsWith("#")) {
+				// System.out.println("kommentar: " + s);
+			} else if (s.startsWith("n")) {
 				n = Integer.parseInt(s.split("=")[1]);
 				m = new String[n];
 				w = new String[n];
-				System.out.println("n = " + n);
-				System.out.println("w.length = " + w.length);
-				System.out.println("m.length = " + m.length);
-			} else if (s.matches("\\d+:[\\s+\\S+]+")) {
-				System.out.println(s);
-				// for (int i = 0; i < n * 2; i++) {
-				wp = new String[n][n];
 				mp = new String[n][n];
+				wp = new String[n][n];
+				/*
+				 * System.out.println("n = " + n);
+				 * System.out.println("w.length = " + w.length);
+				 * System.out.println("m.length = " + m.length);
+				 * System.out.println("mp.length = " + mp.length);
+				 * System.out.println("wp.length = " + wp.length);
+				 */
+			} else if (s.matches("\\d+:[\\s+\\S+]+")) {
+				// System.out.println(s);
 				int number = Integer.parseInt(s.split(":")[0]);
 				String[] st = s.split(": ")[1].split(" ");
-				System.out.println("number: " + number);
+				// System.out.println("number: " + number);
 				if (number % 2 == 0) {
 					for (int j = 0; j < st.length; j++) {
-						System.out.println("wp[" + ((number / 2) - 1) + "]["
-								+ j + "] = " + st[j]);
-						wp[number / 2 - 1][j] = st[j];
+						/*
+						 * System.out.println("wp[" + ((number / 2) - 1) + "]["
+						 * + j + "] = " + m[Integer.valueOf(st[j]) / 2]);
+						 */
+						wp[number / 2 - 1][j] = m[Integer.valueOf(st[j]) / 2];
 					}
 				} else {
 					for (int j = 0; j < st.length; j++) {
-						System.out.println("mp[" + number / 2 + "][" + j
-								+ "] = " + st[j]);
-						mp[number / 2][j] = st[j];
+						/*
+						 * System.out.println("mp[" + number / 2 + "][" + j +
+						 * "] = " + w[Integer.valueOf(st[j]) / 2 - 1]);
+						 */
+						mp[number / 2][j] = w[Integer.valueOf(st[j]) / 2 - 1];
 					}
 				}
-			} else if (s.matches("\\d+\\s+\\D+")) {
+			} else if (s.matches("\\d+\\s+\\S+")) {
 				int i = Integer.parseInt(s.split(" ")[0]);
 				if (i % 2 == 0) {
-					System.out.println("w[" + ((i / 2) - 1) + "] = "
-							+ s.split(" ")[1]);
+					/*
+					 * System.out.println("w[" + ((i / 2) - 1) + "] = " +
+					 * s.split(" ")[1]);
+					 */
 					w[(i / 2) - 1] = s.split(" ")[1];
 
 				} else {
-					System.out.println("m[" + i / 2 + "] = " + s.split(" ")[1]);
+					/*
+					 * System.out.println("m[" + i / 2 + "] = " +
+					 * s.split(" ")[1]);
+					 */
 					m[i / 2] = s.split(" ")[1];
 
 				}
@@ -143,17 +197,6 @@ public class GS {
 			}
 		}
 		scan.close();
-
-		// m = { "Ross", "Chandler", "Joey" };
-		// w = { "Monica", "Phoebe", "Rachel" };
-
-		// String[][] mp = { { w[(6 / 2) - 1], w[(4 / 2) - 1], w[(2 / 2) - 1] },
-		// { w[(2 / 2) - 1], w[(6 / 2) - 1], w[(4 / 2) - 1] },
-		// { w[(6 / 2) - 1], w[(4 / 2) - 1], w[(2 / 2) - 1] } };
-		//
-		// String[][] wp = { { m[3 / 2], m[5 / 2], m[1 / 2] },
-		// { m[5 / 2], m[1 / 2], m[3 / 2] },
-		// { m[1 / 2], m[5 / 2], m[3 / 2] } };
 
 		if (m != null && w != null && mp != null && wp != null) {
 			GS gs = new GS(m, w, mp, wp);
