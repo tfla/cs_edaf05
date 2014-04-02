@@ -1,15 +1,12 @@
-package lab02;
-
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
- * ord representerar varje unika kompinationer
+ * @author Timmy Larsson & Housam Abbas
  */
 public class Word {
-
 	private String word;
 	private LinkedList<Word> words;
+	private Word pathParent;
 
 	public Word(String word) {
 		this.word = word;
@@ -17,13 +14,11 @@ public class Word {
 	}
 
 	public boolean match(Word w) {
-		String matchWord = word.substring(1, 5);// 4 bokst�ver
+		String matchWord = word.substring(1, 5);
 		String w5 = w.toString();
-		//System.out.println(matchWord);
 		for (int i = 0; i < 4; i++) {
 			char c = matchWord.charAt(i);
 			if (w5.contains(c + "")) {
-				// try to solve dublicate of chars
 				int index = w5.indexOf(c);
 				StringBuilder sb = new StringBuilder(w5);
 				sb = sb.deleteCharAt(index);
@@ -58,15 +53,15 @@ public class Word {
 		return word.hashCode();
 	}
 
-	public void print() {
-		for (Word w : words) {
-			System.out.print(" " + w + " ");
-		}
-		System.out.println();
-	}
-
 	public LinkedList<Word> neighbors() {
 		return words;
 	}
 
+	public void setPathParent(Word word) {
+		pathParent = word;
+	}
+
+	public Word getPathParent() {
+		return pathParent;
+	}
 }

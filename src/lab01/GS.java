@@ -1,143 +1,80 @@
-package lab01;
-
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Scanner;
 
 /**
  * 
- * @author Timmy Larsson, Housam Abbas Implementation of the Gales-Shapley
- *         algorithm, prints result to stdout.
+ * @author Timmy Larsson & Housam Abbas
+ * 
  */
 public class GS {
 
-	private int N, engagedCount;
-	private String[][] womenPref;
-	private String[][] menPref;
-	private String[] men;
-	private String[] women;
-	private String[] womenPartner;
-	private String[] menPartner;
-	private boolean[] menEngaged;
+	private LinkedList<Man> freeMen;
+	private LinkedList<Man> temp;
 
 	/**
-	 * Constructor
+	 * Constructor, creates a stable matching and prints it to stdout.
 	 * 
-	 * @param m
-	 *            String[] of names for "male"-objects.
-	 * @param w
-	 *            String[] of names for "female"-objects.
-	 * @param mp
-	 *            String[] of preferences for "male"-objects.
-	 * @param wp
-	 *            String[] of preferences for "female"-objects..
+	 * @param men
+	 *            A LinkedList<Man> containing all the men for which to find
+	 *            matches.
 	 */
-	public GS(String[] m, String[] w, String[][] mp, String[][] wp) {
-		N = mp.length;
-		engagedCount = 0;
-		men = m;
-		women = w;
-		menPref = mp;
-		womenPref = wp;
-		menEngaged = new boolean[N];
-		womenPartner = new String[N];
-		menPartner = new String[N];
-		calcMatches();
+	public GS(LinkedList<Man> men) {
+		this.freeMen = new LinkedList<Man>(men);
+		temp = new LinkedList<Man>(men);
+		calculate();
+		print();
 	}
 
 	/**
-	 * Calculates (and prints) the result.
+	 * Calculates the stable mathings.
 	 */
-	private void calcMatches() {
-		int[] nextInLine = new int[N];
-		while (engagedCount < N) {
-			int free;
-			for (free = 0; free < N; free++)
-				if (!menEngaged[free])
-					break;
-			for (int i = nextInLine[free]; i < N && !menEngaged[free]; i++) {
-				int index = womenIndexOf(menPref[free][i]);
-				nextInLine[free] = index + 1;
-				if (womenPartner[index] == null) {
-					womenPartner[index] = men[free];
-					menPartner[free] = women[index];
-					menEngaged[free] = true;
-					engagedCount++;
+	private void calculate() {
+		while (!freeMen.isEmpty()) {
+			Man m = freeMen.peek();
+			for (int i = 0; i < freeMen.size() && m.partner() == null; i++) {
+				Woman w = m.highest();
+				if (!w.isMarried()) {
+					m.marry(w);
+					freeMen.poll();
 				} else {
-					String currentPartner = womenPartner[index];
-					if (morePreference(currentPartner, men[free], index)) {
-						womenPartner[index] = men[free];
-						menPartner[free] = women[index];
-						menEngaged[free] = true;
-						menEngaged[menIndexOf(currentPartner)] = false;
+					if (w.prefers(m)) {
+						freeMen.add(w.partner());
+						w.divorce();
+						m.marry(w);
+						freeMen.poll();
 					}
 				}
 			}
+
 		}
-		printCouples();
 	}
 
 	/**
-	 * Compares two partners to eachother.
-	 * 
-	 * @param curPartner
-	 *            The current partner.
-	 * @param newPartner
-	 *            The partner with which to compare.
-	 * @param index
-	 *            The index for current partner.
-	 * @return
+	 * Prints the stable matchings to stdout.
 	 */
-	private boolean morePreference(String curPartner, String newPartner,
-			int index) {
-		for (int i = 0; i < N; i++) {
-			System.out.println(womenPref[index][i]);
-			if (womenPref[index][i].equals(newPartner)) {
-				System.out.println("W00000000000T: " + women[index]
-						+ " prefers " + newPartner + " over " + curPartner);
-				return true;
-			}
-			if (womenPref[index][i].equals(curPartner)) {
-				System.out.println(women[index] + " doesn't prefer "
-						+ newPartner + " over " + curPartner);
-				return false;
-			}
-		}
-		return false;
-	}
-
-	private int menIndexOf(String str) {
-		for (int i = 0; i < N; i++)
-			if (men[i].equals(str))
-				return i;
-		return -1;
-	}
-
-	private int womenIndexOf(String str) {
-		for (int i = 0; i < N; i++)
-			if (women[i].equals(str))
-				return i;
-		return -1;
-	}
-
-	public void printCouples() {
-		for (int i = 0; i < N; i++) {
-			System.out.println(womenPartner[i] + " -- " + women[i]);
-			System.out.println(men[i] + " -- " + menPartner[i]);
+	private void print() {
+		for (Man m : temp) {
+			System.out.println(m.toString() + " -- " + m.partner().toString());
 		}
 	}
 
+	/**
+	 * Main-method. Parses a file for men, women and their preferences.
+	 * 
+	 * @param args
+	 *            The path to the file to parse, if none is specified it will
+	 *            parse for the Illiad.
+	 */
 	public static void main(String[] args) {
-		String[] m = null;
-		String[] w = null;
-		String[][] mp = null;
-		String[][] wp = null;
+		LinkedList<Man> m = new LinkedList<Man>();
+		ArrayList<Woman> w = new ArrayList<Woman>();
 		File file = null;
-		boolean debug = false;
 		if (args.length < 1) {
 			file = new File(System.getProperty("user.dir")
-					+ "/src/lab01/sm-illiad.in");
-			debug = true;
+					+ "/sm-illiad.in");
 		} else {
 			file = new File(args[0]);
 		}
@@ -147,81 +84,40 @@ public class GS {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		int n = 0;
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine();
-			if (s.startsWith("#")) {
-				if (debug) {
-					System.out.println("kommentar: " + s);
-				}
-			} else if (s.startsWith("n")) {
-				n = Integer.parseInt(s.split("=")[1]);
-				m = new String[n];
-				w = new String[n];
-				mp = new String[n][n];
-				wp = new String[n][n];
-				if (debug) {
-					System.out.println("n = " + n);
-					System.out.println("w.length = " + w.length);
-					System.out.println("m.length = " + m.length);
-					System.out.println("mp.length = " + mp.length);
-					System.out.println("wp.length = " + wp.length);
-				}
-			} else if (s.matches("\\d+:[\\s+\\S+]+")) {
-				if (debug) {
-					System.out.println(s);
-				}
+			if (s.matches("\\d+:[\\s+\\S+]+")) {
 				int number = Integer.parseInt(s.split(":")[0]);
 				String[] st = s.split(": ")[1].split(" ");
-				if (debug) {
-					System.out.println("number: " + number);
-				}
 				if (number % 2 == 0) {
 					for (int j = 0; j < st.length; j++) {
-						if (debug) {
-							System.out.println("wp[" + ((number / 2) - 1)
-									+ "][" + j + "] = "
-									+ m[Integer.valueOf(st[j]) / 2]);
-						}
-						wp[number / 2 - 1][j] = m[Integer.valueOf(st[j]) / 2];
+						w.get(number / 2 - 1).addPref(
+								m.get(Integer.valueOf(st[j]) / 2));
+
 					}
 				} else {
 					for (int j = 0; j < st.length; j++) {
-						if (debug) {
-							System.out.println("mp[" + number / 2 + "][" + j
-									+ "] = "
-									+ w[Integer.valueOf(st[j]) / 2 - 1]);
-						}
-						mp[number / 2][j] = w[Integer.valueOf(st[j]) / 2 - 1];
+						m.get(number / 2).addPref(
+								w.get(Integer.valueOf(st[j]) / 2 - 1));
 					}
 				}
 			} else if (s.matches("\\d+\\s+\\S+")) {
 				int i = Integer.parseInt(s.split(" ")[0]);
 				if (i % 2 == 0) {
-					if (debug) {
-						System.out.println("w[" + ((i / 2) - 1) + "] = "
-								+ s.split(" ")[1]);
-					}
-					w[(i / 2) - 1] = s.split(" ")[1];
+					w.add((i / 2) - 1, new Woman(s.split(" ")[1]));
 				} else {
-					if (debug) {
-						System.out.println("m[" + i / 2 + "] = "
-								+ s.split(" ")[1]);
-					}
-					m[i / 2] = s.split(" ")[1];
-
+					m.add(i / 2, new Man(s.split(" ")[1]));
 				}
-
 			}
 		}
 		scan.close();
+		/*for (Woman wo : w) {
+			wo.optimize();
+		}*/
 
-		if (m != null && w != null && mp != null && wp != null) {
-			GS gs = new GS(m, w, mp, wp);
-		} else {
-			if (debug) {
-				System.out.println("Something's null.");
-			}
+		if (m != null && w != null) {
+			@SuppressWarnings("unused")
+			GS gs = new GS(m);
 		}
 	}
 }
